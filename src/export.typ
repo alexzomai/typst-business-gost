@@ -1,7 +1,4 @@
-#import "lib.typ": gost
-#import "component/title-templates.typ": templates as title-templates
-#import "component/abstract.typ": abstract
-#import "component/appendixes.typ": appendix-heading, appendixes
-#import "component/headings.typ": structure-heading
-#import "component/custom-title-template.typ"
-#import "utils.typ": enum-numbering
+// Public entry point of the template.
+#import "lib.typ": business-doc
+#import "components.typ": *
+#import "utils.typ": small-text, compact, fetch-field, unbreak-name

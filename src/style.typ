@@ -1,103 +1,68 @@
-#import "component/headings.typ": headings, structural-heading-titles
-#import "component/appendixes.typ": is-heading-in-appendix
+// Adapted from typst-gost/modern-g7-32 (GPL-3.0-only), upstream commit
+// 6fe1cb2ef8f09b1947b241c58b47e7858598f3ce, file src/style.typ.
+// Modified: page numbering moved to a fixed top position; footer, outline,
+// citation and figure rules removed; baseline-pitch line spacing.
+// Licensed under GPL-3.0-only, see ../LICENSE.
 
 #import "constants.typ": *
+#import "utils.typ": line-edges, spaced
 
-#let gost-style(
-  year,
-  city,
-  hide-title,
-  text-size,
-  small-text-size,
-  indent,
-  margin,
-  title-footer-align,
-  pagination-align,
-  add-pagebreaks,
-  body,
-) = {
-  let small-text-difference = (
-    default-text-size.default - default-text-size.small
-  )
-  if small-text-size == none {
-    small-text-size = text-size - small-text-difference
+#let page-number-layer(margin, duplex) = context {
+  let n = here().page()
+  if n > 1 {
+    place(
+      top + left,
+      dx: 0pt,
+      dy: page-number-offset,
+      box(
+        width: page.width,
+        align(center, text(top-edge: "cap-height", bottom-edge: "baseline", counter(page).display("1"))),
+      ),
+    )
   }
-  [#metadata((
-    small-text-size: small-text-size,
-    add-pagebreaks: add-pagebreaks,
-  )) <modern-g7-32-parameters>]
+}
 
-  set page(margin: margin)
+#let business-style(cfg, body) = {
+  let m = cfg.margin
+  set page(
+    paper: cfg.paper,
+    margin: if cfg.duplex {
+      (inside: m.left, outside: m.right, top: m.top, bottom: m.bottom)
+    } else {
+      m
+    },
+    header: none,
+    footer: none,
+    background: page-number-layer(m, cfg.duplex),
+  )
 
-  set text(size: text-size, lang: "ru", hyphenate: false)
+  set text(font: cfg.font, lang: "ru", hyphenate: false, overhang: false)
+  show: it => spaced(cfg.size, cfg.line-spacing, it)
 
   set par(
-    justify: default-justify,
-    first-line-indent: (
-      amount: indent,
-      all: true,
-    ),
-    leading: default-leading,
-    spacing: default-spacing,
+    justify: cfg.justify,
+    first-line-indent: (amount: cfg.indent, all: true),
+    spacing: cfg.paragraph-spacing,
   )
 
-  set outline(indent: indent, depth: default-outline-depth)
-  show outline: set block(below: indent / 2)
-  show outline.entry: it => {
-    show linebreak: [ ]
-    if is-heading-in-appendix(it.element) {
-      let body = it.element.body
-      link(it.element.location(), it.indented(
-        none,
-        [Приложение #it.prefix() #it.element.body]
-          + sym.space
-          + box(width: 1fr, it.fill)
-          + sym.space
-          + sym.wj
-          + it.page(),
-      ))
-    } else {
-      it
-    }
-  }
+  set list(marker: [–], indent: cfg.indent, spacing: default-list-spacing)
+  set enum(indent: cfg.indent, spacing: default-list-spacing)
 
-  set ref(supplement: none)
-  set figure.caption(separator: " — ")
-
-  set math.equation(numbering: "(1)")
-
-  show figure: pad.with(bottom: default-figure-margin-bottom)
-
-  show image: set align(center)
-  show figure.where(kind: image): set figure(supplement: [Рисунок])
-
-  show figure.where(kind: table): it => {
-    set figure.caption(position: top)
-    it
-  }
-  show figure.where(kind: table): set block(breakable: true)
-  show figure.caption.where(kind: table): set align(left)
+  set table(stroke: 0.5pt, inset: 4pt)
+  show table: set par(first-line-indent: 0pt, justify: false)
+  show table: it => spaced(cfg.small-size, 1.0, it)
   show table.cell: set align(left)
-  // TODO: Расположить table.header по центру и сделать шрифт жирным
+  show figure.caption: set align(left)
 
-  show figure.where(kind: raw): set block(breakable: true)
+  set heading(numbering: cfg.heading-numbering)
+  show heading: set text(size: cfg.size, weight: "bold")
+  show heading: set par(first-line-indent: 0pt, justify: false)
+  show heading: set block(above: cfg.size * cfg.line-spacing, below: cfg.size * cfg.line-spacing * 0.5, sticky: true)
+  show heading: it => if cfg.heading-align == "center" {
+    align(center, it)
+  } else {
+    pad(it, left: cfg.indent)
+  }
 
-  set list(marker: [–], indent: indent, spacing: default-list-spacing)
-  set enum(indent: indent, spacing: default-enum-spacing)
-
-  set page(footer: context {
-    if counter(page).get() == (1,) and not hide-title {
-      align(title-footer-align)[#city #year]
-    } else {
-      align(pagination-align)[#counter(page).display()]
-    }
-  })
-
-  set bibliography(
-    style: "gost-r-705-2008-numeric",
-    title: structural-heading-titles.references,
-  )
-
-  show: headings(text-size, indent, add-pagebreaks)
   body
 }

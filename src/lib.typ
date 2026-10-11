@@ -1,100 +1,55 @@
-#import "style.typ": gost-style
-#import "utils.typ": fetch-field
-#import "component/title-templates.typ": templates
-#import "component/performers.typ": fetch-performers, performers-page
+// Adapted from typst-gost/modern-g7-32 (GPL-3.0-only), upstream commit
+// 6fe1cb2ef8f09b1947b241c58b47e7858598f3ce, file src/lib.typ.
+// Modified: the upstream academic entry point is replaced by a business
+// document entry point with validated configuration.
+// Licensed under GPL-3.0-only, see ../LICENSE.
 
 #import "constants.typ": *
+#import "utils.typ": fetch-field
+#import "validate.typ": *
+#import "style.typ": business-style
 
-#let gost-common(
-  title-template,
-  title-arguments,
-  city,
-  year,
-  hide-title,
-  performers,
-  force-performers,
-) = {
-  set par(justify: false)
-
-  title-arguments = title-arguments.named()
-
-  title-arguments.insert("year", year)
-
-  let show-performers-page = false
-  if performers != none {
-    performers = fetch-performers(performers)
-    if (performers.len() > 1 or force-performers) {
-      show-performers-page = true
-    } else {
-      title-arguments.insert("performer", performers.first())
-    }
-  }
-
-  if not hide-title {
-    title-template(..title-arguments)
-  }
-
-  if show-performers-page { performers-page(performers) }
-}
-
-#let gost(
-  title-template: templates.default,
+#let business-doc(
+  paper: "a4",
+  font: default-font,
   text-size: default-text-size,
   indent: default-indent,
   margin: default-margin,
-  title-footer-align: center,
-  pagination-align: center,
-  add-pagebreaks: true,
-  city: none,
-  year: auto,
-  hide-title: false,
-  performers: none,
-  force-performers: false,
-  ..title-arguments,
+  line-spacing: default-line-spacing,
+  paragraph-spacing: default-paragraph-spacing,
+  justify: default-justify,
+  duplex: false,
+  long-retention: false,
+  strict-font-size: true,
+  heading-numbering: "1.",
+  heading-align: "indent",
+  title: none,
+  author: none,
   body,
 ) = {
-  let table-counter = counter("table")
-  let image-counter = counter("image")
-  let citation-counter = counter("citation")
-  let appendix-counter = counter("appendix")
-
-  show figure.where(kind: image): it => {
-    image-counter.step()
-    it
-  }
-  show figure.where(kind: table): it => {
-    table-counter.step()
-    it
-  }
-
-  if year == auto {
-    year = int(datetime.today().display("[year]"))
-  }
-
-  text-size = fetch-field(text-size, ("default*", "small"))
-
-  show: gost-style.with(
-    year,
-    city,
-    hide-title,
-    text-size.default,
-    text-size.small,
-    indent,
-    margin,
-    title-footer-align,
-    pagination-align,
-    add-pagebreaks,
+  let sizes = validate-text-size(text-size, strict-font-size)
+  assert(
+    heading-align in ("indent", "center"),
+    message: "heading-align: допустимо «indent» или «center»",
   )
-
-  gost-common(
-    title-template,
-    title-arguments,
-    city,
-    year,
-    hide-title,
-    performers,
-    force-performers,
+  let cfg = (
+    paper: validate-paper(paper),
+    font: font,
+    size: sizes.default,
+    small-size: sizes.small,
+    indent: validate-indent(indent),
+    margin: validate-margin(margin, long-retention),
+    line-spacing: validate-line-spacing(line-spacing),
+    paragraph-spacing: paragraph-spacing,
+    justify: justify,
+    duplex: duplex,
+    heading-numbering: heading-numbering,
+    heading-align: heading-align,
   )
-
+  set document(title: title, author: author) if title != none and author != none
+  set document(title: title) if title != none and author == none
+  set document(author: author) if title == none and author != none
+  state(config-state-key).update(cfg)
+  show: business-style.with(cfg)
   body
 }

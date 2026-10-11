@@ -1,12 +1,12 @@
-#let small-text = body => context {
-  let target-size = query(<modern-g7-32-parameters>)
-    .first()
-    .value
-    .small-text-size
-  set text(size: target-size)
-  body
-}
+// Adapted from typst-gost/modern-g7-32 (GPL-3.0-only), upstream commit
+// 6fe1cb2ef8f09b1947b241c58b47e7858598f3ce, file src/utils.typ.
+// `fetch-field` and `unbreak-name` are reused unchanged. `small-text` and
+// the signature field are modified (see NOTICE.md). Licensed under
+// GPL-3.0-only, see ../LICENSE.
 
+#import "constants.typ": *
+
+// ---- reused unchanged from upstream ----
 #let fetch-field(field, expected-keys, default: (:), hint: "") = {
   let expected-keys-arg-error = "Ожидаемые ключи должны быть списком строк, например '(arg1*, arg2), здесь arg1 - обязательный агрумент, а arg2 - необязательный'"
 
@@ -105,74 +105,58 @@
   return name.replace(" ", "\u{00A0}")
 }
 
-#let sign-field(name, position, part: none, details: "подпись, дата") = {
-  let part-cell = []
-  if part != none {
-    part-cell = table.cell(align: top)[(#small-text[#part])]
-  }
+// ---- modified from upstream ----
 
-  set par(justify: false)
-  table(
-    stroke: none,
-    inset: (x: 0pt, y: 3pt),
-    columns: (5fr, 1fr, 3fr, 1fr, 3fr),
-    [#position], [], [], [], table.cell(align: bottom)[#unbreak-name(name)],
-    table.hline(start: 2, end: 3),
-    [], [], table.cell(align: center)[#small-text[#details]], [], part-cell,
-  )
+// Line box model. Typst places baselines at (top-edge + bottom-edge + leading)
+// intervals. We fix leading to 0 and choose both edges so that the interval
+// equals `size * factor`, independent of any Word-style line spacing model.
+#let line-edges(size, factor) = {
+  let pitch = size * factor
+  let extra = pitch - size * (font-ascent + font-descent)
+  let top = size * font-ascent + extra / 2
+  (top-edge: top, bottom-edge: -(pitch - top))
 }
 
-#let get-numbering-alphabet(number) = {
-  let alphabet = (
-    "а",
-    "б",
-    "в",
-    "г",
-    "д",
-    "е",
-    "ж",
-    "з",
-    "и",
-    "к",
-    "л",
-    "м",
-    "н",
-    "о",
-    "п",
-    "р",
-    "с",
-    "т",
-    "у",
-    "ф",
-    "х",
-    "ц",
-    "ч",
-    "ш",
-    "щ",
-    "э",
-    "ю",
-    "я",
-  )
-  let result = ""
-
-  while number > 0 {
-    result = alphabet.at(calc.rem(number - 1, 28)) + result
-    number = calc.floor(number / 28)
-  }
-
-  return result
+#let spaced(size, factor, body) = {
+  let e = line-edges(size, factor)
+  set text(size: size, top-edge: e.top-edge, bottom-edge: e.bottom-edge)
+  set par(leading: 0pt)
+  body
 }
 
-#let heading-numbering(..nums) = {
-  nums = nums.pos()
-  let letter = upper(get-numbering-alphabet(nums.first()))
-  let rest = nums.slice(1).map(elem => str(elem))
-  if rest != none {
-    return (letter, rest).flatten().join(".")
-  }
-  return letter
+#let get-config() = state(config-state-key, none).get()
+
+// Reduced-size text (tables, requisites captions), single line spacing.
+#let small-text = body => context {
+  let cfg = get-config()
+  spaced(cfg.small-size, 1.0, body)
 }
 
-#let enum-numbering(number) = {
-  return [#get-numbering-alphabet(number))]
+// Block with single line spacing at body size (compact requisites).
+#let compact = body => context {
+  let cfg = get-config()
+  set par(first-line-indent: 0pt, justify: false)
+  block(above: 0pt, below: cfg.size * 0.75, spaced(cfg.size, 1.0, body))
+}
+
+// Signature field: position, then a rule with caption and the name.
+// Built on a grid, not a table, so that table styling does not apply to it.
+#let signature-field(name, position, details: "подпись") = {
+  set par(justify: false, first-line-indent: 0pt)
+  block(breakable: false)[
+    #position
+    #v(0.8em)
+    #grid(
+      columns: (1fr, auto),
+      column-gutter: 6pt,
+      align: (center, left + bottom),
+      grid(
+        rows: (auto, auto),
+        row-gutter: 2pt,
+        box(width: 100%, height: 0.2em, stroke: (bottom: 0.5pt)),
+        small-text[#details],
+      ),
+      unbreak-name(name),
+    )
+  ]
 }

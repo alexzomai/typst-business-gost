@@ -111,6 +111,32 @@
   }
 }
 
+// Stacked blanks for parties signing an appendix. Not a replacement for the
+// full position/signature/name requisite provided by `signatures`.
+// A shared grid prevents the body first-line indent from shifting one row.
+#let signature-lines(
+  labels: ([Исполнитель:], [Заказчик:]),
+  line-length: 60mm,
+  column-gutter: 3mm,
+  row-gutter: 5mm,
+) = {
+  set par(first-line-indent: 0pt, justify: false)
+  layout(size => {
+    let label-width = labels.map(label => measure(label).width).fold(0pt, calc.max)
+    assert(
+      label-width + column-gutter + line-length <= size.width,
+      message: "signature-lines: подписи и линии не помещаются в доступную ширину; сократите подписи или длину линии",
+    )
+    block(breakable: false, grid(
+      columns: (auto, line-length),
+      column-gutter: column-gutter,
+      row-gutter: row-gutter,
+      align: left + bottom,
+      ..labels.map(label => (label, line(length: line-length))).flatten(),
+    ))
+  })
+}
+
 // Header of a contract appendix (item 5.19): the word "Приложение", its number
 // and the reference to the underlying document (kind, date, number) form a
 // corner requisite at the upper right, lines aligned left, longest line at most

@@ -58,6 +58,10 @@
   show heading: set text(size: cfg.size, weight: "bold")
   show heading: set par(first-line-indent: 0pt, justify: false)
   show heading: set block(above: cfg.size * cfg.line-spacing, below: cfg.size * cfg.line-spacing * 0.5, sticky: true)
+  show heading: it => {
+    assert(it.level <= max-heading-levels, message: "Уровней рубрикации текста не должно быть более четырёх (п. 5.18), получен уровень " + str(it.level))
+    it
+  }
   show heading: it => if cfg.heading-align == "center" {
     align(center, it)
   } else {

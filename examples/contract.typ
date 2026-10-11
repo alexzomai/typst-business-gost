@@ -4,7 +4,7 @@
 #document-heading(
   "ДОГОВОР",
   number: "[номер]",
-  subject: "оказания услуг",
+  subject: "об оказании услуг",
   place: "[Место заключения]",
   date: "[Дата]",
 )
@@ -33,7 +33,7 @@
   right: (position: [Заказчик], name: "[Инициалы Фамилия]"),
 )
 
-#contract-appendix-header(1, [Перечень услуг], to: [к договору № [номер]])
+#contract-appendix-header(1, [Перечень услуг], base-kind: "договору", base-date: "[дата]", base-number: "[номер]")
 
 1. Услуга 1: [описание].
 

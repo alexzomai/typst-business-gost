@@ -31,6 +31,7 @@
 
 #v(1em)
 #signatures(
+  layout: "vertical",
   left: (position: [Директор], name: "[Инициалы Фамилия]"),
   right: (position: [Бухгалтер], name: "[Инициалы Фамилия]"),
 )

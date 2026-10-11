@@ -24,6 +24,13 @@
 #let min-line-spacing = 1.0
 #let max-line-spacing = 1.5
 
+// Maximum number of heading levels (item 5.18).
+#let max-heading-levels = 4
+
+// Longest line of a requisite by placement (item 3.5).
+#let corner-zone-width = 8cm
+#let longitudinal-zone-width = 12cm
+
 // Recommended body sizes (pt) and a technical floor for reduced text.
 #let recommended-text-sizes = (12, 13, 14)
 #let min-small-text-size = 8

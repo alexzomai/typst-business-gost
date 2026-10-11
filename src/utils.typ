@@ -136,14 +136,18 @@
 #let compact = body => context {
   let cfg = get-config()
   set par(first-line-indent: 0pt, justify: false)
-  block(above: 0pt, below: cfg.size * 0.75, spaced(cfg.size, 1.0, body))
+  block(width: 100%, above: 0pt, below: cfg.size * 0.75, spaced(cfg.size, 1.0, body))
 }
 
-// Signature field: position, then a rule with caption and the name.
-// Built on a grid, not a table, so that table styling does not apply to it.
-#let signature-field(name, position, details: "подпись") = {
+// Signature field (item 5.22): position, then a rule with the caption and the
+// name. The whole field is body text at single spacing and body size: item 3.3
+// allows smaller type only for tables and requisites 08 and 25, so the caption
+// is not reduced. Built on a grid, not a table, so that table styling does
+// not apply to it.
+#let signature-field(name, position, details: "подпись") = context {
+  let cfg = get-config()
   set par(justify: false, first-line-indent: 0pt)
-  block(breakable: false)[
+  spaced(cfg.size, 1.0, block(breakable: false)[
     #position
     #v(0.8em)
     #grid(
@@ -154,9 +158,9 @@
         rows: (auto, auto),
         row-gutter: 2pt,
         box(width: 100%, height: 0.2em, stroke: (bottom: 0.5pt)),
-        small-text[#details],
+        details,
       ),
       unbreak-name(name),
     )
-  ]
+  ])
 }

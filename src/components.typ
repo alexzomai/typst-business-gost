@@ -6,6 +6,30 @@
 #import "constants.typ": corner-zone-width, longitudinal-zone-width
 #import "utils.typ": compact, small-text, signature-field, unbreak-name, get-config, spaced
 
+// Body clause (item 3.4), optionally kept together on a page.
+// Set paragraph styles INSIDE the block: embedding contexts may reset them.
+// Detect paragraph structure recursively, including explicit par() and wrappers.
+// Wrapping an existing block-level paragraph in par() can silently lose text.
+#let has-paragraph-structure(body) = {
+  if type(body) != content { return false }
+  if body.func() in (par, parbreak) { return true }
+  if body.has("children") and body.children.any(has-paragraph-structure) { return true }
+  if body.has("body") { return has-paragraph-structure(body.body) }
+  false
+}
+
+#let business-clause(body, breakable: true) = context {
+  let cfg = get-config()
+  block(width: 100%, breakable: breakable)[
+    #set par(first-line-indent: (amount: cfg.indent, all: true), justify: true)
+    #if has-paragraph-structure(body) {
+      body
+    } else {
+      par(body)
+    }
+  ]
+}
+
 // Document heading (item 5.17): optional status line, kind and number
 // centred; the subject ("heading to the text", wording "О"/"Об") starts at the
 // left margin; place on the left and date on the right. Components are set at
@@ -83,7 +107,8 @@
 // Signature fields (item 5.22). "horizontal": two persons of equal rank on one
 // level. "vertical": persons of different rank one under the other, in the
 // order given (the caller lists the more senior person first). Writing the
-// name as "И.О. Фамилия" is the caller's responsibility.
+// name as "И.О. Фамилия" is the caller's responsibility; signature-field
+// removes ordinary/NBSP spaces between the two initials only.
 #let signatures(
   left: (position: [Исполнитель], name: none),
   right: (position: [Заказчик], name: none),
@@ -119,8 +144,10 @@
   line-length: 60mm,
   column-gutter: 3mm,
   row-gutter: 5mm,
+  above: 10mm,
 ) = {
   set par(first-line-indent: 0pt, justify: false)
+  v(above)
   layout(size => {
     let label-width = labels.map(label => measure(label).width).fold(0pt, calc.max)
     assert(

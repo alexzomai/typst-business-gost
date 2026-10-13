@@ -146,6 +146,11 @@
 // not apply to it.
 #let signature-field(name, position, details: "подпись") = context {
   let cfg = get-config()
+  // Item 5.22: no space between initials, but keep the surname separator.
+  // Restrict this to two capital-letter initials; do not rewrite other names.
+  let normalized-name = if name == none { none } else {
+    name.replace(regex("(\\p{Lu}\\.)[ \u{00A0}]+(\\p{Lu}\\.)"), m => m.captures.at(0) + m.captures.at(1))
+  }
   set par(justify: false, first-line-indent: 0pt)
   spaced(cfg.size, 1.0, block(breakable: false)[
     #position
@@ -160,7 +165,7 @@
         box(width: 100%, height: 0.2em, stroke: (bottom: 0.5pt)),
         details,
       ),
-      unbreak-name(name),
+      unbreak-name(normalized-name),
     )
   ])
 }
